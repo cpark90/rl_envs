@@ -4,7 +4,7 @@ workspace(name = "rl_envs")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-load("//bazel-scripts:rl_envs_rules.bzl", "rl_envs_rules")
+load("//bazel_scripts:rl_envs_rules.bzl", "rl_envs_rules")
 rl_envs_rules()
 
 
@@ -50,5 +50,5 @@ protobuf_deps()
 
 # maven
 
-load("//bazel-scripts:rl_envs_java_deps.bzl", "rl_envs_java_deps")
+load("//bazel_scripts:rl_envs_java_deps.bzl", "rl_envs_java_deps")
 rl_envs_java_deps()

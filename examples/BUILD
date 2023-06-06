@@ -12,6 +12,7 @@ py_binary(
     deps = [
         requirement("gymnasium"),
         requirement("numpy"),
+        requirement("six"),
         "//envs",
     ],
 )
