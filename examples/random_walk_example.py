@@ -2,11 +2,11 @@ import gymnasium as gym
 import numpy as np
 import envs
 
-env = gym.make('random_walk-v0')
+env = gym.make('random_walk-v0', n_actions=1)
 
-num_episodes = 20
+num_episodes = 1
 num_steps_per_episode = 200
-
+print(env.action_space.n)
 collected_rewards = []
 for i in range(num_episodes):
     s = env.reset()

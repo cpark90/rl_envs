@@ -17,52 +17,54 @@ class RandomWalkEnv(gym.Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, n_states=7, p_stay=0.0, p_backward=0.5):
+    def __init__(self, n_states=7, p_stay=0.0, p_backward=0.5, n_actions=2):
 
         # two terminal states added
         self.shape = (1, n_states + 2)
+
+        # initial state is mid point
         self.start_state_index = self.shape[1] // 2
 
-        self.nS = nS = np.prod(self.shape)
-        self.nA = nA = 2
+        self.number_of_state = number_of_state = np.prod(self.shape)
+        self.number_of_action = number_of_action = n_actions
 
-        self.P = {}
-        for s in range(nS):
-            self.P[s] = {}
-            for a in range(nA):
+        self.model = {}
+        for state in range(number_of_state):
+            self.model[state] = {}
+            for action in range(number_of_action):
                 p_forward = 1.0 - p_stay - p_backward
 
-                s_forward = np.clip(s - 1 if a == WEST else s + 1, 0, nS - 1) if s != 0 and s != nS - 1 else s
-                s_backward = np.clip(s + 1 if a == WEST else s - 1, 0, nS - 1) if s != 0 and s != nS - 1 else s
+                s_forward = np.clip(state - 1 if action == WEST else state + 1, 0, number_of_state - 1) if state != 0 and state != number_of_state - 1 else state
+                s_backward = np.clip(state + 1 if action == WEST else state - 1, 0, number_of_state - 1) if state != 0 and state != number_of_state - 1 else state
 
-                r_forward = 1.0 if s == nS - 2 and s_forward == nS - 1 else 0.0
-                r_backward = 1.0 if s == nS - 2 and s_backward == nS - 1 else 0.0
+                r_forward = 1.0 if state == number_of_state - 2 and s_forward == number_of_state - 1 else 0.0
+                r_backward = 1.0 if state == number_of_state - 2 and s_backward == number_of_state - 1 else 0.0
 
-                d_forward = s >= nS - 2 and s_forward == nS - 1 or s <= 1 and s_forward == 0
-                d_backward = s >= nS - 2 and s_backward == nS - 1 or s <= 1 and s_backward == 0
+                d_forward = state >= number_of_state - 2 and s_forward == number_of_state - 1 or state <= 1 and s_forward == 0
+                d_backward = state >= number_of_state - 2 and s_backward == number_of_state - 1 or state <= 1 and s_backward == 0
 
-                self.P[s][a] = [
+                self.model[state][action] = [
                     (p_forward, s_forward, r_forward, d_forward),
-                    (p_stay, s, 0.0, s == nS - 1 or s == 0),
+                    (p_stay, state, 0.0, state == number_of_state - 1 or state == 0),
                     (p_backward, s_backward, r_backward, d_backward)
                 ]
 
-        self.isd = np.zeros(nS)
+        self.isd = np.zeros(number_of_state)
         self.isd[self.start_state_index] = 1.0
         self.lastaction = None # for rendering
 
-        self.action_space = spaces.Discrete(self.nA)
-        self.observation_space = spaces.Discrete(self.nS)
+        self.action_space = spaces.Discrete(self.number_of_action)
+        self.observation_space = spaces.Discrete(self.number_of_state)
 
-        self.s = categorical_sample(self.isd, self.np_random)
+        self.current_state = categorical_sample(self.isd, self.np_random)
 
     def step(self, action):
-        transitions = self.P[self.s][action]
+        transitions = self.model[self.current_state][action]
         i = categorical_sample([t[0] for t in transitions], self.np_random)
-        p, s, r, d = transitions[i]
-        self.s = s
+        p, state, r, d = transitions[i]
+        self.current_state = state
         self.lastaction = action
-        return (int(s), r, d, {"prob": p})
+        return (int(state), r, d, {"prob": p})
 
     def reset(
         self,
@@ -72,16 +74,16 @@ class RandomWalkEnv(gym.Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        self.s = categorical_sample(self.isd, self.np_random)
+        self.current_state = categorical_sample(self.isd, self.np_random)
         self.lastaction = None
-        return int(self.s)
+        return int(self.current_state)
 
     def render(self, mode='human', close=False):
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         desc = np.asarray(['[' + ascii_uppercase[:self.shape[1] - 2] + ']'], dtype='c').tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
-        color = 'red' if self.s == 0 else 'green' if self.s == self.nS - 1 else 'yellow'
-        desc[0][self.s] = utils.colorize(desc[0][self.s], color, highlight=True)
+        color = 'red' if self.current_state == 0 else 'green' if self.current_state == self.number_of_state - 1 else 'yellow'
+        desc[0][self.current_state] = utils.colorize(desc[0][self.current_state], color, highlight=True)
         outfile.write("\n")
         outfile.write("\n".join(''.join(line) for line in desc)+"\n")
 
